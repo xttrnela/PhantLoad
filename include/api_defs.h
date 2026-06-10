@@ -21,10 +21,10 @@ typedef LPVOID (WINAPI *type_VirtualAlloc)(
 );
 
 typedef BOOL (WINAPI *type_VirtualProtect)(
-    LPVOID lpAddress,
-    SIZE_T dwSize,
-    DWORD  flNewProtect,
-    PDWORD lpflOldProtect
+        LPVOID lpAddress,
+        SIZE_T dwSize,
+        DWORD  flNewProtect,
+        PDWORD lpflOldProtect
 );
 
 typedef LPVOID (WINAPI *type_HeapAlloc)(

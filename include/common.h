@@ -5,7 +5,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winternl.h>
-//#include <wincrypt.h>
 #include <bcrypt.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -83,11 +82,11 @@ typedef struct _INSTANCE{
 typedef struct _PE_CONTEXT {
   PVOID   pRawData;
   PVOID   pTargetBase;
-	HEADERS hds;
-	BOOL	  TargetBaseState;
+  HEADERS hds;
+  BOOL	  TargetBaseState;
 } PE_CONTEXT, *PPE_CONTEXT;
 
-// --- Function Prototypes ---
+// --- Function Prototypes 
 
 // headers_parse.c
 void GetPeHeaders(PVOID baseAddress, PHEADERS hds);
@@ -96,12 +95,11 @@ void GetPeHeaders(PVOID baseAddress, PHEADERS hds);
 PIMAGE_EXPORT_DIRECTORY GetExportDirectory(PVOID dllBase, PHEADERS hds);
 PVOID 									GetDllBase(const wchar_t *dll_name);
 PVOID 									GetDllFuncAddress(PVOID dllBase, PIMAGE_EXPORT_DIRECTORY exportTable, char *funcNameString);
-INT 										InitK32(PINSTANCE inst);
+INT 			  						InitK32(PINSTANCE inst);
 INT 										InitBcrypt(PINSTANCE inst);
 
 // pe_mapper.c
 INT 	InitPEctx(PPE_CONTEXT);
-// pe_mapper.c
 void 	wVirtualAlloc(PPE_CONTEXT pe_ctx, LPVOID pref_addr, type_VirtualAlloc pVirtualAlloc);
 INT 	AllocateBase(PPE_CONTEXT pe_ctx, PINSTANCE inst);
 INT 	MapSections(PPE_CONTEXT pe_ctx);
