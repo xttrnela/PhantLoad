@@ -1,61 +1,61 @@
 # PhantLoad
 
-**PhantLoad** — это продвинутый Reflective PE Loader, написанный на C для исследования механизмов защиты Windows. Он позволяет загружать и запускать исполняемые файлы (EXE) целиком из памяти, минуя стандартные системные вызовы загрузки и не оставляя следов на диске.
+**PhantLoad** is an advanced Reflective PE Loader written in C, designed for exploring Windows security mechanisms. It enables loading and executing entire Portable Executable (EXE) files directly from memory, bypassing standard system loading calls and leaving no traces on the disk.
 
-## 🚀 Основные возможности
+## 🚀 Key Features
 
-- **Custom API Resolver**: Полный отказ от использования статической таблицы импортов (IAT) самого лоадера. Все необходимые функции Windows находятся динамически через парсинг PEB (Process Environment Block) и таблиц экспорта DLL.
-- **Поддержка Forwarded Exports**: Интеллектуальное разрешение функций-пересылок. Например, когда `kernel32.dll!HeapAlloc` перенаправляет вызов в `ntdll.dll!RtlAllocateHeap`, лоадер автоматически находит конечный адрес кода.
-- **AES-256 CBC Decryption**: Полезная нагрузка хранится в зашифрованном виде и расшифровывается только в оперативной памяти перед запуском.
-- **Manual Mapping**: Реализован полный цикл ручного маппинга PE-образа:
-  - Копирование заголовков и выравнивание секций по виртуальным адресам.
-  - **Base Relocations**: Корректировка абсолютных адресов (Type 10 - DIR64) для корректной работы по любому адресу в памяти.
-  - **IAT Resolution**: Ручное заполнение таблицы импортов пейлоада с использованием кастомных резолверов.
-- **DEP/NX Bypass**: Динамическое управление правами доступа к страницам памяти через `VirtualProtect` для обеспечения возможности выполнения кода.
+- **Custom API Resolver**: Completely avoids using the loader's own static Import Address Table (IAT). All necessary Windows functions are discovered dynamically by parsing the Process Environment Block (PEB) and DLL Export Directories.
+- **Forwarded Export Support**: Intelligent resolution of API redirections. For instance, when `kernel32.dll!HeapAlloc` forwards the call to `ntdll.dll!RtlAllocateHeap`, the loader automatically resolves the final code address.
+- **AES-256 CBC Decryption**: Payloads are stored encrypted and decrypted only in RAM immediately before execution.
+- **Manual Mapping**: Implements the full manual PE image mapping cycle:
+  - Header copying and section alignment to virtual addresses.
+  - **Base Relocations**: Adjustment of absolute addresses (Type 10 - DIR64) to ensure correct operation at any memory base.
+  - **IAT Resolution**: Manual filling of the payload's Import Address Table using custom resolvers.
+- **DEP/NX Bypass**: Dynamic management of memory page protections via `VirtualProtect` to ensure code execution capability.
 
-## 📁 Структура проекта
+## 📁 Project Structure
 
-- `src/`: Исходный код ядра лоадера.
-- `include/`: Заголовочные файлы и определения Windows API.
-- `payload/`: Скрипты для подготовки и шифрования полезной нагрузки.
+- `src/`: Core loader source code.
+- `include/`: Header files and Windows API definitions.
+- `payload/`: Scripts for payload preparation and encryption.
 
-## 🛠 Инструкция по использованию
+## 🛠 Usage Instructions
 
-### 1. Требования
-- ОС Linux (Debian/Ubuntu/Kali).
-- Кросс-компилятор `x86_64-w64-mingw32-gcc`.
-- Python 3 с установленной библиотекой `pycryptodome`.
+### 1. Requirements
+- Linux OS (Debian/Ubuntu/Kali).
+- `x86_64-w64-mingw32-gcc` cross-compiler.
+- Python 3 with the `pycryptodome` library installed.
 
-### 2. Подготовка пейлоада
-Поместите ваш исходный код пейлоада в папку `payload/` (например, `payload_calc.c`):
+### 2. Payload Preparation
+Place your payload source code in the `payload/` folder (e.g., `payload_calc.c`):
 
 ```bash
-# Компиляция пейлоада в EXE
+# Compile payload to EXE
 x86_64-w64-mingw32-gcc payload/payload_calc.c -o payload/payload_calc.exe -luser32 -lkernel32
 
-# Шифрование и создание заголовочного файла payload.h
-# ВАЖНО: payload.h должен находиться там, где его ожидает main.c
+# Encrypt and create the payload.h header file
+# IMPORTANT: payload.h must be placed where main.c expects it
 python3 payload/encrypt.py payload/payload_calc.exe payload/payload.h
 ```
 
-### 3. Сборка лоадера
-Из корневой директории проекта:
+### 3. Building the Loader
+From the project root directory:
 
 ```bash
-# Компиляция лоадера
+# Compile the loader
 x86_64-w64-mingw32-gcc src/*.c -o PhantLoad.exe -lbcrypt
 ```
 
-### 4. Запуск
-Запустите полученный `PhantLoad.exe` в среде Windows или через Wine:
+### 4. Running
+Run the resulting `PhantLoad.exe` in a Windows environment or via Wine:
 ```bash
 wine PhantLoad.exe
 ```
 
-## 🧠 Технические детали
+## 🧠 Technical Details
 
-Самой интересной частью проекта является реализация `GetDllFuncAddress`. В отличие от простых лоадеров, PhantLoad проверяет, не является ли найденный RVA функции частью секции экспорта. Если это так, лоадер парсит строку форвардера (например, `NTDLL.RtlAllocateHeap`), рекурсивно находит базу `ntdll.dll` и вычисляет реальный адрес функции. Это позволяет лоадеру работать стабильно даже в современных версиях Windows, где `kernel32.dll` является лишь оболочкой.
+The most interesting part of the project is the implementation of `GetDllFuncAddress`. Unlike simple loaders, PhantLoad checks if the discovered function RVA is part of the Export Section. If so, the loader parses the forwarder string (e.g., `NTDLL.RtlAllocateHeap`), recursively finds the `ntdll.dll` base, and calculates the actual function address. This allows the loader to remain stable even on modern Windows versions where `kernel32.dll` acts merely as a wrapper.
 
 ## ⚠️ Disclaimer
 
-Этот проект создан исключительно в образовательных целях и для тестирования систем защиты. Автор не несет ответственности за любое незаконное использование данного инструмента. Используйте его только в рамках этичного хакинга и легальных исследований.
+This project was created solely for educational purposes and security testing. The author is not responsible for any illegal use of this tool. Use it only within the scope of ethical hacking and legal research.
