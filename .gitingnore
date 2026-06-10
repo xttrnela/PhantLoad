@@ -1,0 +1,5 @@
+venv/
+build/
+*.exe
+*.o
+.payload.h.swp
